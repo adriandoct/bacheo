@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Sistema Inteligente de Bacheo Tijuana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0f1d;
+            --bg-card: rgba(17, 24, 39, 0.88);
+            --border-subtle: rgba(56, 189, 248, 0.2);
+            --border-glow: rgba(56, 189, 248, 0.45);
+            --text-title: #f8fafc;
+            --text-body: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --grad-primary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.12) 0%, transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(16px);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.35);
+            border-radius: 9999px;
+            padding: 0.3rem 0.9rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.85rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text-title);
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.02em;
+        }
+
+        p.sub {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        .error-alert {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-title);
+            margin-bottom: 0.4rem;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(2, 6, 23, 0.65);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            color: var(--text-title);
+            padding: 0.75rem 1rem;
+            font-size: 0.92rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--grad-primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+        }
+
+        .btn-submit:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .quick-roles {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .quick-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            margin-bottom: 0.85rem;
+            text-align: center;
+        }
+
+        .quick-btns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+        }
+
+        .btn-quick {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-body);
+            padding: 0.75rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .btn-quick:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(30, 41, 59, 1);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-quick.admin:hover { border-color: var(--accent-red); }
+        .btn-quick.colaborador:hover { border-color: var(--accent-amber); }
+        .btn-quick.ciudadano:hover { border-color: var(--accent-cyan); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <span class="brand-badge">
+                <span>🚧</span> SIT-BACHO TIJUANA
+            </span>
+            <h1>Iniciar Sesión</h1>
+            <p class="sub">Control de Acceso basado en Roles (RBAC) • MongoDB: bacheo</p>
+        </div>
+
+        {% if error_msg %}
+            <div class="error-alert">
+                ⚠️ {{ error_msg }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" name="username" placeholder="admin, colaborador o ciudadano" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-submit">Ingresar al Sistema &rarr;</button>
+        </form>
+
+        <!-- ACCESOS RÁPIDOS A LOS 3 ROLES SOLICITADOS -->
+        <div class="quick-roles">
+            <div class="quick-title">⚡ Acceso Rápido por Rol (Clic para rellenar)</div>
+            <div class="quick-btns">
+                <button type="button" class="btn-quick admin" onclick="setCredentials('admin', 'admin123')">
+                    <span style="font-size:1.1rem;">👑</span>
+                    <strong>Admin</strong>
+                    <span style="font-size:0.68rem; color:#f87171;">admin123</span>
+                </button>
+                <button type="button" class="btn-quick colaborador" onclick="setCredentials('colaborador', 'colaborador123')">
+                    <span style="font-size:1.1rem;">🛠️</span>
+                    <strong>Colaborador</strong>
+                    <span style="font-size:0.68rem; color:#fbbf24;">colaborador123</span>
+                </button>
+                <button type="button" class="btn-quick ciudadano" onclick="setCredentials('ciudadano', 'ciudadano123')">
+                    <span style="font-size:1.1rem;">👤</span>
+                    <strong>Ciudadano</strong>
+                    <span style="font-size:0.68rem; color:#38bdf8;">ciudadano123</span>
+                </button>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:0.85rem;">
+                MongoDB: <strong>bacheo</strong> • Estructura de Datos: <strong>Pilas (LIFO)</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function setCredentials(user, pass) {
+            document.getElementById('username').value = user;
+            document.getElementById('password').value = pass;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+{% extends "miapp/base_bacheo.html" %}
+
+{% block title %}Reportes de Secuencia de Procesos (PUSH & POP) | Bacheo Tijuana{% endblock %}
+
+{% block extra_head %}
+<style>
+    .report-header {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .report-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.85rem;
+        font-weight: 800;
+        color: var(--text-title);
+        margin-bottom: 0.35rem;
+        letter-spacing: -0.02em;
+    }
+
+    .report-subtitle {
+        color: var(--text-muted);
+        font-size: 0.92rem;
+    }
+
+    /* TARJETAS DE MÉTRICAS DEL REPORTE */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        backdrop-filter: blur(12px);
+    }
+
+    .summary-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-muted);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.4rem;
+    }
+
+    .summary-val {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-title);
+    }
+
+    /* DIAGRAMA DE SECUENCIA VISUAL */
+    .sequence-flow-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 18px;
+        padding: 1.5rem;
+        backdrop-filter: blur(12px);
+        margin-bottom: 2rem;
+    }
+
+    .flow-steps {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 1rem 0;
+    }
+
+    .flow-step {
+        flex: 1;
+        min-width: 200px;
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 1.25rem;
+        text-align: center;
+        position: relative;
+    }
+
+    .flow-step.active-push {
+        border-color: rgba(6, 182, 212, 0.45);
+        background: rgba(6, 182, 212, 0.08);
+    }
+
+    .flow-step.active-pop {
+        border-color: rgba(239, 68, 68, 0.45);
+        background: rgba(239, 68, 68, 0.08);
+    }
+
+    .flow-step-icon {
+        font-size: 1.8rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .flow-step-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-title);
+        margin-bottom: 0.2rem;
+    }
+
+    .flow-step-desc {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .flow-arrow {
+        font-size: 1.4rem;
+        color: var(--text-muted);
+    }
+
+    /* FILTROS */
+    .filters-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-select {
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        color: var(--text-title);
+        padding: 0.45rem 0.85rem;
+        font-size: 0.85rem;
+        outline: none;
+    }
+
+    .btn-action {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-title);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: var(--accent-cyan);
+    }
+
+    /* TABLA DE AUDITORÍA */
+    .audit-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 18px;
+        padding: 1.5rem;
+        backdrop-filter: blur(12px);
+    }
+
+    .badge-op {
+        font-family: 'Fira Code', monospace;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .badge-op.PUSH {
+        background: rgba(6, 182, 212, 0.18);
+        color: #38bdf8;
+        border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+
+    .badge-op.POP {
+        background: rgba(239, 68, 68, 0.18);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .badge-op.PEEK {
+        background: rgba(168, 85, 247, 0.18);
+        color: #c084fc;
+        border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .delta-badge {
+        font-family: 'Fira Code', monospace;
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ENCABEZADO DE REPORTE -->
+<div class="report-header">
+    <div>
+        <div class="report-title">📊 Reporte de Secuencia y Auditoría de Procesos</div>
+        <div class="report-subtitle">
+            Trazabilidad cronológica de operaciones <strong>PUSH (Registro)</strong> y <strong>POP (Liberación)</strong> sobre las Pilas de Bacheo en Tijuana.
+        </div>
+    </div>
+    
+    <div style="display:flex; gap:0.75rem;">
+        <a href="{% url 'exportar_reporte_csv' %}" class="btn-action">
+            <span>📥</span> Descargar Reporte CSV
+        </a>
+        <button type="button" class="btn-action" onclick="window.print()">
+            <span>🖨️</span> Imprimir Reporte
+        </button>
+    </div>
+</div>
+
+<!-- TARJETAS DE MÉTRICAS DE LA SECUENCIA -->
+<div class="summary-grid">
+    <div class="summary-card">
+        <div class="summary-label">Total Operaciones PUSH</div>
+        <div class="summary-val" style="color:var(--accent-cyan);">{{ total_push }}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Registros ingresados a la cima de pila</div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-label">Total Operaciones POP</div>
+        <div class="summary-val" style="color:#f87171;">{{ total_pop }}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Baches atendidos y liberados</div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-label">Pendientes en Pilas</div>
+        <div class="summary-val" style="color:var(--risk-medio);">{{ total_pendientes }}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">En cola de atención LIFO</div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-label">Total Baches Atendidos</div>
+        <div class="summary-val" style="color:var(--atendido);">{{ total_atendidos }}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Vialidades rehabilitadas en Tijuana</div>
+    </div>
+</div>
+
+<!-- DIAGRAMA VISUAL DEL CICLO DE VIDA DE LA PILA -->
+<div class="sequence-flow-card">
+    <div style="font-family:'Outfit', sans-serif; font-size:1.1rem; font-weight:700; color:var(--text-title); margin-bottom:0.75rem;">
+        🔄 Ciclo Secuencial de la Estructura de Datos (LIFO)
+    </div>
+    <div class="flow-steps">
+        <div class="flow-step active-push">
+            <div class="flow-step-icon">📍</div>
+            <div class="flow-step-title">1. Detección en Mapa</div>
+            <div class="flow-step-desc">Ciudadano ubica el bache en Tijuana con Google Maps.</div>
+        </div>
+
+        <div class="flow-arrow">➔</div>
+
+        <div class="flow-step active-push">
+            <div class="flow-step-icon">📥</div>
+            <div class="flow-step-title">2. Operación PUSH</div>
+            <div class="flow-step-desc">Se inserta al TOPE de la Pila según nivel de riesgo.</div>
+        </div>
+
+        <div class="flow-arrow">➔</div>
+
+        <div class="flow-step">
+            <div class="flow-step-icon">👁️</div>
+            <div class="flow-step-title">3. Inspección PEEK</div>
+            <div class="flow-step-desc">Cuadrilla técnica examina la cima prioritaria.</div>
+        </div>
+
+        <div class="flow-arrow">➔</div>
+
+        <div class="flow-step active-pop">
+            <div class="flow-step-icon">⚡</div>
+            <div class="flow-step-title">4. Operación POP</div>
+            <div class="flow-step-desc">Se extrae de la pila, se aplica asfalto y se libera.</div>
+        </div>
+
+        <div class="flow-arrow">➔</div>
+
+        <div class="flow-step">
+            <div class="flow-step-icon">✅</div>
+            <div class="flow-step-title">5. Registro y Auditoría</div>
+            <div class="flow-step-desc">Se almacena la secuencia en MongoDB (bacheo).</div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTROS DE BÚSQUEDA -->
+<form method="GET" class="filters-bar">
+    <div class="filter-group">
+        <label style="font-size:0.8rem; font-weight:600; color:var(--text-title);">Operación:</label>
+        <select name="operacion" class="filter-select" onchange="this.form.submit()">
+            <option value="">Todas las Operaciones</option>
+            <option value="PUSH" {% if operacion_filtro == 'PUSH' %}selected{% endif %}>PUSH (Registros)</option>
+            <option value="POP" {% if operacion_filtro == 'POP' %}selected{% endif %}>POP (Liberaciones)</option>
+            <option value="PEEK" {% if operacion_filtro == 'PEEK' %}selected{% endif %}>PEEK (Inspecciones)</option>
+        </select>
+
+        <label style="font-size:0.8rem; font-weight:600; color:var(--text-title); margin-left:0.5rem;">Pila:</label>
+        <select name="pila" class="filter-select" onchange="this.form.submit()">
+            <option value="">Todas las Pilas</option>
+            <option value="Alto" {% if 'Alto' in pila_filtro %}selected{% endif %}>Pila Alto Riesgo</option>
+            <option value="Mediano" {% if 'Mediano' in pila_filtro %}selected{% endif %}>Pila Mediano Riesgo</option>
+            <option value="Bajo" {% if 'Bajo' in pila_filtro %}selected{% endif %}>Pila Bajo Riesgo</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <input type="text" name="q" value="{{ busqueda }}" class="filter-select" 
+               placeholder="Buscar por código o dirección..." style="min-width:240px;">
+        <button type="submit" class="btn-action">Filtrar</button>
+        {% if operacion_filtro or pila_filtro or busqueda %}
+        <a href="{% url 'reportes_secuencia' %}" class="btn-action" style="background:rgba(239, 68, 68, 0.15); color:#fca5a5;">
+            Limpiar
+        </a>
+        {% endif %}
+    </div>
+</form>
+
+<!-- TABLA DE SECUENCIA DE AUDITORÍA -->
+<div class="audit-card">
+    <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Operación</th>
+                    <th>Pila Afectada</th>
+                    <th>Bache Involucrado</th>
+                    <th>Operador / Rol</th>
+                    <th>Tamaño Pila</th>
+                    <th>Tope Previo ➔ Nuevo</th>
+                    <th>Detalle de Transición</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for seq in secuencias %}
+                <tr>
+                    <td style="font-family:'Fira Code', monospace; font-size:0.78rem; white-space:nowrap;">
+                        {{ seq.fecha_hora|date:"Y-m-d H:i:s" }}
+                    </td>
+                    <td>
+                        <span class="badge-op {{ seq.tipo_operacion }}">
+                            {{ seq.tipo_operacion }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>{{ seq.pila_nombre }}</strong>
+                    </td>
+                    <td>
+                        <strong style="font-family:'Fira Code', monospace; color:var(--accent-cyan);">
+                            {{ seq.bache.codigo }}
+                        </strong><br>
+                        <small style="color:var(--text-muted);">{{ seq.bache.direccion }}, {{ seq.bache.colonia }}</small>
+                    </td>
+                    <td>
+                        <div>{{ seq.usuario.nombre_completo|default:"Sistema Automático" }}</div>
+                        <span class="role-badge {{ seq.rol_usuario }}" style="font-size:0.65rem; padding:0.15rem 0.45rem;">
+                            {{ seq.rol_usuario }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="delta-badge">
+                            {{ seq.tamano_pila_antes }} ➔ <strong>{{ seq.tamano_pila_despues }}</strong>
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size:0.75rem; font-family:'Fira Code', monospace;">
+                            {{ seq.tope_codigo_previo|default:"VACIA" }} ➔ <strong style="color:var(--accent-cyan);">{{ seq.tope_codigo_nuevo|default:"VACIA" }}</strong>
+                        </span>
+                    </td>
+                    <td style="font-size:0.8rem; max-width:320px;">
+                        {{ seq.descripcion }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:3rem; color:var(--text-muted);">
+                        No se encontraron registros de secuencia con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

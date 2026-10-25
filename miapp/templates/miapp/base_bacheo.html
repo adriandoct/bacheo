@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Inteligente de Bacheo | Tijuana, B.C.{% endblock %}</title>
+    <!-- Google Fonts Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS (Geolocalización universal de alta precisión en Tijuana) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <style>
+        :root {
+            --bg-base: #0a0f1d;
+            --bg-surface: #0f172a;
+            --bg-card: rgba(17, 24, 39, 0.78);
+            --bg-card-hover: rgba(30, 41, 59, 0.9);
+            --border-subtle: rgba(56, 189, 248, 0.16);
+            --border-glow: rgba(56, 189, 248, 0.45);
+            
+            --text-title: #f8fafc;
+            --text-body: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            /* Niveles de Riesgo y Operaciones de Pila */
+            --risk-alto: #ef4444;       /* Rojo: Alto Riesgo */
+            --risk-alto-bg: rgba(239, 68, 68, 0.15);
+            --risk-medio: #f59e0b;      /* Ámbar: Mediano Riesgo */
+            --risk-medio-bg: rgba(245, 158, 11, 0.15);
+            --risk-bajo: #3b82f6;       /* Azul: Bajo Riesgo */
+            --risk-bajo-bg: rgba(59, 130, 246, 0.15);
+            --atendido: #10b981;        /* Verde: Atendido / Liberado */
+            --atendido-bg: rgba(16, 185, 129, 0.15);
+            
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --grad-primary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%);
+            --grad-danger: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            --grad-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --grad-stack: linear-gradient(180deg, rgba(6, 182, 212, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.08) 0%, transparent 35%),
+                radial-gradient(circle at 90% 90%, rgba(139, 92, 246, 0.08) 0%, transparent 35%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-body);
+            min-height: 100vh;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVBAR PRINCIPAL */
+        .navbar {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.85rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--grad-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.3rem;
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.4);
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-title);
+            letter-spacing: -0.02em;
+        }
+
+        .brand-subtitle {
+            font-size: 0.72rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: var(--text-body);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-title);
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        /* CONMUTADOR RÁPIDO DE ROLES */
+        .role-switcher {
+            display: flex;
+            align-items: center;
+            background: rgba(2, 6, 23, 0.65);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 0.25rem;
+            gap: 0.25rem;
+        }
+
+        .role-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .role-btn:hover {
+            color: var(--text-title);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .role-btn.active-admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .role-btn.active-colaborador {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fde68a;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .role-btn.active-ciudadano {
+            background: rgba(6, 182, 212, 0.2);
+            color: #a5f3fc;
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .role-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            letter-spacing: 0.04em;
+        }
+
+        .role-badge.admin {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .role-badge.colaborador {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .role-badge.ciudadano {
+            background: rgba(6, 182, 212, 0.2);
+            color: #38bdf8;
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-logout {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.82rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* CONTENIDO PRINCIPAL */
+        .main-container {
+            flex: 1;
+            max-width: 1440px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1.75rem 2rem;
+        }
+
+        /* ALERTAS / MENSAJES */
+        .messages-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .alert {
+            padding: 0.85rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid transparent;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.16);
+            color: #6ee7b7;
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .alert-error, .alert-danger {
+            background: rgba(239, 68, 68, 0.16);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.16);
+            color: #fde68a;
+            border-color: rgba(245, 158, 11, 0.35);
+        }
+
+        .alert-info {
+            background: rgba(6, 182, 212, 0.16);
+            color: #7dd3fc;
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 1.25rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .db-badge {
+            font-family: 'Fira Code', monospace;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 900px) {
+            .navbar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem;
+            }
+            .role-switcher {
+                justify-content: center;
+            }
+            .nav-links {
+                justify-content: center;
+            }
+            .main-container {
+                padding: 1rem;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar">
+        <a href="{% url 'index' %}" class="brand-container">
+            <div class="brand-icon">
+                🚧
+            </div>
+            <div>
+                <div class="brand-title">BACHO-TJ</div>
+                <div class="brand-subtitle">Sistema Inteligente de Bacheo • Tijuana</div>
+            </div>
+        </a>
+
+        <!-- ENLACES -->
+        <div class="nav-links">
+            <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                <span>📍</span> Mapa & Pilas
+            </a>
+            <a href="{% url 'reportes_secuencia' %}" class="nav-link {% if request.resolver_match.url_name == 'reportes_secuencia' %}active{% endif %}">
+                <span>📊</span> Reportes de Secuencia
+            </a>
+        </div>
+
+        <!-- CONMUTADOR RÁPIDO DE ROLES (Admin, Colaborador, Ciudadano) -->
+        <div class="role-switcher">
+            <span style="font-size:0.7rem; color:var(--text-muted); padding: 0 0.4rem; font-weight:600;">ROL:</span>
+            <a href="{% url 'cambiar_rol_demo' 'admin' %}" 
+               class="role-btn {% if user_role == 'admin' %}active-admin{% endif %}"
+               title="Cambiar a Administrador de Obras Públicas">
+                👑 Admin
+            </a>
+            <a href="{% url 'cambiar_rol_demo' 'colaborador' %}" 
+               class="role-btn {% if user_role == 'colaborador' %}active-colaborador{% endif %}"
+               title="Cambiar a Cuadrilla Técnica / Colaborador">
+                🛠️ Colaborador
+            </a>
+            <a href="{% url 'cambiar_rol_demo' 'ciudadano' %}" 
+               class="role-btn {% if user_role == 'ciudadano' %}active-ciudadano{% endif %}"
+               title="Cambiar a Ciudadano Reportante">
+                👤 Ciudadano
+            </a>
+        </div>
+
+        <!-- ESTADO DE SESIÓN -->
+        <div class="user-status">
+            <span class="role-badge {{ user_role }}">
+                {{ user_role }}
+            </span>
+            <span style="font-size:0.82rem; font-weight:600; color:var(--text-title);">
+                {{ request.user.username }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn-logout" title="Cerrar sesión">Salir</a>
+        </div>
+    </nav>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="main-container">
+        {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <span>{{ message }}</span>
+                <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; font-size:1.1rem; cursor:pointer;">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div>
+            <strong>Sistema Inteligente de Bacheo Tijuana (SIT-BACHO)</strong> &copy; 2026. H. Ayuntamiento de Tijuana, B.C.
+        </div>
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span>Estructura de Datos: <strong>Pilas (LIFO)</strong></span>
+            <span>•</span>
+            <span>Base de Datos: <span class="db-badge">MongoDB: {{ db_name|default:"bacheo" }}</span></span>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
